@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#eef2f7" />
+<meta name="description" content="Laxman OS — a private, mobile-first personal command center." />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="stylesheet" href="styles.css" />
+<title>Laxman OS</title>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="app-shell">
+<header class="topbar glass">
+  <div>
+    <span class="eyebrow">PERSONAL COMMAND CENTER</span>
+    <h1>Laxman OS</h1>
+  </div>
+  <button class="icon-btn" id="themeBtn" aria-label="Toggle appearance">☼</button>
+</header>
+
+<main>
+<section class="hero glass">
+  <div class="hero-copy"><span class="eyebrow" id="greeting">GOOD MORNING</span><h2>Focus on what actually moves your life forward.</h2><p id="dateText"></p></div>
+  <div class="focus-ring"><strong id="focusScore">0</strong><span>focus</span></div>
+</section>
+
+<section class="grid two">
+  <article class="glass card priority-card">
+    <div class="card-head"><div><span class="eyebrow">TODAY</span><h3>One main objective</h3></div><button class="text-btn" id="clearObjective">Clear</button></div>
+    <input id="objective" class="glass-input" placeholder="What must be finished today?" />
+    <div class="mini-stats"><span><b id="doneCount">0</b> done</span><span><b id="taskCount">0</b> tasks</span><span><b id="projectCount">0</b>/3 active</span></div>
+  </article>
+  <article class="glass card ai-card">
+    <div class="card-head"><div><span class="eyebrow">AI REALITY CHECK</span><h3 id="aiTitle">Your system is watching.</h3></div><span class="status-dot"></span></div>
+    <p id="aiMessage">Add a few tasks and projects. This space will call out distraction, overload and unfinished work instead of giving you motivational fluff.</p>
+    <button class="primary-btn" id="reviewBtn">Run daily review</button>
+  </article>
+</section>
+
+<section class="glass card">
+ <div class="section-title"><div><span class="eyebrow">TASKS</span><h3>Today’s execution</h3></div><button class="add-btn" id="addTask">＋</button></div>
+ <div id="taskList" class="list"></div>
+</section>
+
+<section class="glass card">
+ <div class="section-title"><div><span class="eyebrow">PROJECT CONTROL</span><h3>Maximum 3 active projects</h3></div><button class="add-btn" id="addProject">＋</button></div>
+ <div id="projectList" class="project-list"></div>
+ <p class="hint">Everything else belongs in the backlog. Do not confuse activity with progress.</p>
+</section>
+
+<section class="grid three">
+ <article class="glass metric"><span>💰 MONEY</span><strong id="moneyValue">—</strong><small>Track monthly net position</small></article>
+ <article class="glass metric"><span>📺 CONTENT</span><strong id="contentValue">0</strong><small>Ideas / videos in pipeline</small></article>
+ <article class="glass metric"><span>🔥 STREAK</span><strong id="streakValue">0</strong><small>Focused days</small></article>
+</section>
+
+<section class="glass card">
+ <div class="section-title"><div><span class="eyebrow">QUICK CAPTURE</span><h3>Get it out of your head</h3></div></div>
+ <textarea id="journal" class="glass-input textarea" placeholder="Idea, problem, decision, reminder..."></textarea>
+ <div class="actions"><button class="primary-btn" id="saveJournal">Save note</button><button class="secondary-btn" id="clearData">Reset local data</button></div>
+</section>
+</main>
+<footer><span>LAXMAN OS</span><span>Local-first • PWA • No account required</span></footer>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
