@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "agents": [
+    {"id":"commander","name":"Commander","level":0,"permissions":["agent.route","status.read"]},
+    {"id":"phone","name":"Phone Agent","level":1,"permissions":["phone.open_app","phone.launch_url","automation.trigger"]},
+    {"id":"research","name":"Research Agent","level":0,"permissions":["web.research","status.read"]},
+    {"id":"github","name":"GitHub Agent","level":1,"permissions":["github.read","github.create_issue","github.create_branch","github.create_pr"],"approvalPermissions":["github.merge","github.write_main"]},
+    {"id":"security","name":"Security Agent","level":3,"permissions":["security.evaluate","approval.issue"]}
+  ]
+}
