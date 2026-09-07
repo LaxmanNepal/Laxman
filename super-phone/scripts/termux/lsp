@@ -1,0 +1,17 @@
+#!/data/data/com.termux/files/usr/bin/bash
+set -euo pipefail
+URL="${LSP_GATEWAY_URL:-http://127.0.0.1:8787}"
+TOKEN="${LSP_GATEWAY_TOKEN:-}"
+cmd="${1:-health}"
+shift || true
+case "$cmd" in
+  health|agents|audit|approvals)
+    curl -fsS -H "Authorization: Bearer $TOKEN" "$URL/$cmd" ;;
+  command)
+    text="${1:-}"
+    curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' --data "$(jq -nc --arg c "$text" '{command:$c,source:"termux"}')" "$URL/command" ;;
+  approve|deny)
+    id="${1:?approval id required}"
+    curl -fsS -X POST -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' --data "$(jq -nc --arg d "$cmd" '{decision:$d}')" "$URL/approval/$id" ;;
+  *) echo "Usage: lsp {health|agents|audit|approvals|command <text>|approve <id>|deny <id>}"; exit 2;;
+esac
