@@ -1,0 +1,9 @@
+{
+  "workflows": [
+    {"id":"morning","trigger":"schedule","schedule":"07:00","steps":["health","check github","check websites"],"max_risk":"L1"},
+    {"id":"work-mode","trigger":"manual","steps":["work mode"],"max_risk":"L1"},
+    {"id":"creator-mode","trigger":"manual","steps":["creator mode"],"max_risk":"L1"},
+    {"id":"ci-alert","trigger":"github.workflow.failed","steps":["notify"],"max_risk":"L1"},
+    {"id":"website-alert","trigger":"website.health.failed","steps":["notify"],"max_risk":"L1"}
+  ]
+}
