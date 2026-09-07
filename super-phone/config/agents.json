@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "agents": [
+    {"id":"commander","phase":1,"risk":"L0","capabilities":["route","plan"],"actions":["route_command","create_plan"]},
+    {"id":"voice","phase":2,"risk":"L1","capabilities":["normalize_voice"],"actions":["normalize_command"]},
+    {"id":"phone","phase":3,"risk":"L1","capabilities":["android"],"actions":["open_url","notify","tasker_task"]},
+    {"id":"research","phase":4,"risk":"L0","capabilities":["research"],"actions":["search","summarize"]},
+    {"id":"github","phase":6,"risk":"L2","capabilities":["github"],"actions":["inspect_repo","inspect_workflows","create_branch","create_pr"]},
+    {"id":"content","phase":5,"risk":"L1","capabilities":["content"],"actions":["draft","schedule"]},
+    {"id":"website","phase":5,"risk":"L1","capabilities":["websites"],"actions":["health_check","monitor"]},
+    {"id":"nepse","phase":5,"risk":"L0","capabilities":["market_data"],"actions":["read_quote","read_portfolio"]},
+    {"id":"files","phase":4,"risk":"L1","capabilities":["files"],"actions":["read_allowed","write_allowed"]},
+    {"id":"memory","phase":7,"risk":"L1","capabilities":["memory"],"actions":["store","retrieve"]},
+    {"id":"event","phase":8,"risk":"L1","capabilities":["events"],"actions":["evaluate_rule"]},
+    {"id":"orchestrator","phase":9,"risk":"L1","capabilities":["multi_agent"],"actions":["delegate","verify"]},
+    {"id":"autonomy","phase":10,"risk":"L2","capabilities":["bounded_autonomy"],"actions":["run_policy"]},
+    {"id":"security","phase":1,"risk":"L0","capabilities":["security"],"actions":["audit","authorize"]}
+  ]
+}
