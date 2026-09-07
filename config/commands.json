@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "commands": [
+    {"phrase":"status","permission":"status.read","agent":"commander"},
+    {"phrase":"check github","permission":"github.read","agent":"github"},
+    {"phrase":"work mode","permission":"automation.trigger","agent":"phone"},
+    {"phrase":"creator mode","permission":"automation.trigger","agent":"phone"},
+    {"phrase":"research","permission":"web.research","agent":"research"}
+  ]
+}
