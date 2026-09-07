@@ -1,0 +1,8 @@
+{
+  "rules": [
+    {"event":"github.workflow.failed","action":"notify","risk":"L1"},
+    {"event":"website.health.failed","action":"notify","risk":"L1"},
+    {"event":"approval.expiring","action":"notify","risk":"L1"},
+    {"event":"security.anomaly","action":"lockdown","risk":"L3"}
+  ]
+}
