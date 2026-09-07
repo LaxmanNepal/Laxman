@@ -1,0 +1,27 @@
+name: Super Phone Validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate JSON contracts
+        run: |
+          node -e "for (const f of ['super-phone/config/agents.json','super-phone/config/permissions.json','super-phone/config/commands.json','super-phone/config/workflows.json','super-phone/config/events.json','super-phone/config/autonomy.json']) JSON.parse(require('fs').readFileSync(f))"
+      - name: Syntax check
+        run: node --check super-phone/gateway/server.js
+      - name: Unit tests
+        run: npm test --prefix super-phone/gateway
+      - name: Check secrets are not committed
+        run: |
+          ! grep -RInE '(ghp_|github_pat_|sk-[A-Za-z0-9_-]{20,}|LSP_GATEWAY_TOKEN=[^$]' super-phone --exclude='*.md' || (echo 'Possible secret found'; exit 1)
