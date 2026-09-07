@@ -1,0 +1,12 @@
+{
+  "levels": {
+    "L0": {"approval": false, "description":"read-only"},
+    "L1": {"approval": false, "description":"low-risk allowlisted automation"},
+    "L2": {"approval": true, "description":"sensitive actions require explicit approval"},
+    "L3": {"approval": true, "description":"critical actions require explicit human approval and are never autonomous"}
+  },
+  "always_block": ["arbitrary_shell","credential_export","password_read","device_wipe","account_delete","financial_transfer","disable_security","force_push","merge_without_approval"],
+  "approval_ttl_seconds": 300,
+  "max_body_bytes": 65536,
+  "local_bind_only": true
+}
