@@ -1,0 +1,28 @@
+name: Super Phone CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: gateway/package-lock.json
+      - name: Validate JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('agents.json','utf8')); JSON.parse(require('fs').readFileSync('../config/commands.json','utf8'))"
+      - name: Syntax check
+        run: node --check server.js
+      - name: Tests
+        run: npm test
