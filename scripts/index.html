@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Laxman Ultimate AI Assistant</title></head>
+<body>
+<script>
+'use strict';
+
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+const json = (x) => JSON.stringify(x, null, 2);
+const ok = (result, extra={}) => JSON.stringify({result, ...extra});
+const fail = (e) => JSON.stringify({error: String(e?.message || e)});
+
+function n(v, d=0) { const x=Number(v); return Number.isFinite(x)?x:d; }
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+async function sha(text, algorithm='SHA-256') {
+  const buf=await crypto.subtle.digest(algorithm, enc.encode(String(text??'')));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function units(category, value, from, to){
+  const v=n(value);
+  const tables={
+    length:{m:1,km:1000,cm:.01,mm:.001,ft:.3048,inch:.0254,mi:1609.344,yd:.9144},
+    mass:{kg:1,g:.001,mg:1e-6,lb:.45359237,oz:.028349523125},
+    volume:{l:1,ml:.001,m3:1000,gal:3.785411784,cup:.2365882365},
+    area:{m2:1,km2:1e6,ft2:.09290304,acre:4046.8564224},
+    speed:{mps:1,kph:1/3.6,mph:.44704,knot:.514444},
+    temperature:null
+  };
+  if(category==='temperature'){
+    let c=from==='c'?v:from==='f'?(v-32)*5/9:from==='k'?v-273.15:v;
+    return to==='c'?c:to==='f'?c*9/5+32:to==='k'?c+273.15:c;
+  }
+  const t=tables[category]; if(!t||t[from]===undefined||t[to]===undefined) throw Error('Unsupported unit/category');
+  return v*t[from]/t[to];
+}
+
+function safeCalc(expr){
+  let s=String(expr??'').replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'');
+  if(!/^[0-9+\-*/%().\s^]+$/.test(s)) throw Error('Calculator accepts only numeric expressions');
+  s=s.replace(/\^/g,'**');
+  if(/\*\*/.test(s) && /\*\*[^0-9\s(]/.test(s)) throw Error('Invalid exponent');
+  const value=Function('"use strict";return ('+s+')')();
+  if(!Number.isFinite(value)) throw Error('Result is not finite');
+  return value;
+}
+
+async function fetchJson(url){
+  const r=await fetch(url,{headers:{'Accept':'application/json'}}); if(!r.ok) throw Error(`HTTP ${r.status}`); return r.json();
+}
+async function fetchText(url){
+  const r=await fetch(url); if(!r.ok) throw Error(`HTTP ${r.status}`); return r.text();
+}
+
+async function search(q){
+  const u='https://api.duckduckgo.com/?q='+encodeURIComponent(q)+'&format=json&no_html=1&skip_disambig=1';
+  const d=await fetchJson(u);
+  const items=[];
+  if(d.AbstractText) items.push({title:d.Heading||q,url:d.AbstractURL||'',snippet:d.AbstractText});
+  for(const x of (d.RelatedTopics||[]).slice(0,8)){
+    if(x.Text) items.push({title:x.Text,url:x.FirstURL||'',snippet:x.Text});
+    else if(x.Topics) for(const y of x.Topics.slice(0,3)) if(y.Text) items.push({title:y.Text,url:y.FirstURL||'',snippet:y.Text});
+  }
+  return {query:q,source:'DuckDuckGo Instant Answer',results:items.slice(0,10)};
+}
+
+async function news(q='Nepal'){
+  const rss='https://news.google.com/rss/search?q='+encodeURIComponent(q)+'&hl=en-US&gl=US&ceid=US:en';
+  const d=await fetchJson('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(rss));
+  return {query:q,source:'Google News RSS via rss2json',items:(d.items||[]).slice(0,10).map(x=>({title:x.title,url:x.link,published:x.pubDate,source:x.author}))};
+}
+
+async function weather(city,lat,lon){
+  let la=lat,lo=lon,name=city;
+  if((la===undefined||lo===undefined)&&city){
+    const g=await fetchJson('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=en&format=json');
+    if(!g.results?.length) throw Error('Location not found'); la=g.results[0].latitude; lo=g.results[0].longitude; name=g.results[0].name;
+  }
+  if(la===undefined||lo===undefined) throw Error('Provide city or latitude/longitude');
+  const d=await fetchJson(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability&forecast_days=3&timezone=auto`);
+  return {location:name||`${la},${lo}`,latitude:la,longitude:lo,source:'Open-Meteo',current:d.current,timezone:d.timezone,hourly:d.hourly};
+}
+
+async function wikipedia(q,lang='en'){
+  const u=`https://${encodeURIComponent(lang)}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q.replace(/\s+/g,'_'))}`;
+  const d=await fetchJson(u);
+  return {title:d.title,extract:d.extract,url:d.content_urls?.desktop?.page||d.content_urls?.mobile?.page||'',source:'Wikipedia'};
+}
+
+async function page(url){
+  try { return {url,content:(await fetchText(url)).replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,15000)}; }
+  catch(e){
+    const proxy='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
+    return {url,content:(await fetchText(proxy)).replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,15000),via:'CORS fallback'};
+  }
+}
+
+function b64(text,mode){
+  if(mode==='decode') return dec.decode(Uint8Array.from(atob(text),c=>c.charCodeAt(0)));
+  return btoa(String.fromCharCode(...enc.encode(String(text))));
+}
+function regex(text,pattern,flags='g'){ const re=new RegExp(pattern,flags); return {matches:[...String(text??'').matchAll(re)].map(m=>m[0]),test:re.test(String(text??''))}; }
+function color(c){
+  c=String(c).trim(); let m=c.match(/^#([0-9a-f]{3,8})$/i);
+  if(m){let h=m[1]; if(h.length===3) h=h.split('').map(x=>x+x).join(''); if(h.length>=6){const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16); return {hex:'#'+h.slice(0,6).toUpperCase(),rgb:`rgb(${r}, ${g}, ${b})`,hsl:rgbHsl(r,g,b)};}}
+  throw Error('Use a hex color such as #3498db');
+}
+function rgbHsl(r,g,b){r/=255;g/=255;b/=255;let max=Math.max(r,g,b),min=Math.min(r,g,b),h,s,l=(max+min)/2;if(max===min)h=s=0;else{let d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4}h/=6}return `hsl(${Math.round(h*360)}, ${Math.round(s*100)}%, ${Math.round(l*100)}%)`;}
+function password(len=20){const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*_-+=';const a=new Uint32Array(len);crypto.getRandomValues(a);return [...a].map(x=>chars[x%chars.length]).join('');}
+function rand(min=0,max=1){min=Math.ceil(n(min));max=Math.floor(n(max));if(max<min) [min,max]=[max,min];const a=new Uint32Array(1);crypto.getRandomValues(a);return min+(a[0]/4294967296)*(max-min+1)|0;}
+
+async function run(o){
+  const a=o.action;
+  switch(a){
+    case 'search': return search(o.query||'');
+    case 'news': return news(o.query||'Nepal');
+    case 'weather': return weather(o.city,o.lat,o.lon);
+    case 'wikipedia': return wikipedia(o.query||o.text||'',o.lang||'en');
+    case 'fetch_page': return page(o.query||o.url||'');
+    case 'summarize_text': return {text:String(o.text||''),instruction:'Summarize this text clearly in the user language, preserving key facts. The host model should perform the summary.'};
+    case 'calculator': return {expression:o.expression,result:safeCalc(o.expression)};
+    case 'currency': {const amount=n(o.amount,1),from=(o.from||'EUR').toUpperCase(),to=(o.to||'USD').toUpperCase();const d=await fetchJson(`https://api.frankfurter.app/latest?amount=${amount}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);return {source:'Frankfurter',...d};}
+    case 'unit_convert': return {category:o.category,from:o.from_unit,to:o.to_unit,value:n(o.value),result:units(o.category,n(o.value),o.from_unit,o.to_unit)};
+    case 'timezone': {const z=o.query||o.timezone||'Asia/Kathmandu';return {timezone:z,now:new Intl.DateTimeFormat('en-GB',{dateStyle:'full',timeStyle:'long',timeZone:z}).format(new Date()),offset:new Intl.DateTimeFormat('en-US',{timeZoneName:'longOffset',timeZone:z}).format(new Date()).split(', ').pop()};}
+    case 'qr': {const data=o.query||o.text||'';return {url:`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(data)}`,data};}
+    case 'hash': return {algorithm:o.algorithm||'SHA-256',hash:await sha(o.text||'',o.algorithm||'SHA-256')};
+    case 'base64': return {mode:o.mode||'encode',result:b64(o.text||'',o.mode||'encode')};
+    case 'json_format': {const v=typeof o.text==='string'?JSON.parse(o.text):o.data;return {formatted:JSON.stringify(v,null,2),compact:JSON.stringify(v)};}
+    case 'regex': return regex(o.text||'',o.pattern||'',o.flags||'g');
+    case 'color': return color(o.color||o.text||'');
+    case 'password': return {password:password(Math.max(4,Math.min(256,n(o.length,20))))};
+    case 'random': return {value:rand(o.min??0,o.max??100)};
+    case 'ip': return await fetchJson('https://ipapi.co/json/');
+    case 'url': {const u=o.query||o.url||'';return {url:u,open:`${u}`,encoded:encodeURI(u)};}
+    case 'maps': {const q=o.query||'';return {url:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q),query:q};}
+    case 'notes': {const key=String(o.key||'note'); if(o.value!==undefined){localStorage.setItem('lua:'+key,String(o.value));return {saved:true,key,value:String(o.value)}} return {key,value:localStorage.getItem('lua:'+key)};}
+    case 'pomodoro': {const m=Math.max(1,n(o.minutes,25));return {minutes:m,seconds:m*60,display:`${m}:00`,note:'Use the model/app UI timer to count down.'};}
+    case 'countdown': {const s=Math.max(0,n(o.seconds,o.minutes?o.minutes*60:60));return {seconds:s,display:`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`};}
+    case 'tip': {const bill=n(o.amount),p=n(o.tip_percent,10),people=Math.max(1,n(o.people,1));return {tip:bill*p/100,total:bill*(1+p/100),per_person:bill*(1+p/100)/people};}
+    case 'bmi': {const h=n(o.height_cm)/100,w=n(o.weight_kg);if(h<=0||w<=0)throw Error('Valid height and weight required');const bmi=w/(h*h);return {bmi:Number(bmi.toFixed(2)),category:bmi<18.5?'underweight':bmi<25?'normal':bmi<30?'overweight':'obesity'};}
+    case 'percentage': {const x=n(o.value),y=n(o.total);return {percent:y?x/y*100:0};}
+    case 'date_diff': {const s=new Date(o.start),e=new Date(o.end);if(isNaN(s)||isNaN(e))throw Error('Use ISO dates');const days=Math.round((e-s)/86400000);return {days,weeks:days/7};}
+    case 'text_stats': {const t=String(o.text||'');return {characters:t.length,characters_no_spaces:t.replace(/\s/g,'').length,words:t.trim()?t.trim().split(/\s+/).length:0,lines:t? t.split(/\r?\n/).length:0};}
+    case 'encode_uri': return encodeURIComponent(String(o.text||''));
+    case 'decode_uri': return decodeURIComponent(String(o.text||''));
+    case 'uuid': return crypto.randomUUID();
+    case 'word_count': {const t=String(o.text||'').trim();return t?t.split(/\s+/).length:0;}
+    default: throw Error('Unknown action: '+a);
+  }
+}
+
+window['ai_edge_gallery_get_result'] = async (data) => {
+  try { const o=typeof data==='string'?JSON.parse(data):data; return ok(await run(o)); }
+  catch(e){ console.error(e); return fail(e); }
+};
+</script>
+</body>
+</html>
