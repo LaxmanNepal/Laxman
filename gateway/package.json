@@ -1,0 +1,9 @@
+{
+  "name": "laxman-super-phone-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Zero-dependency local command gateway for Laxman Super Phone",
+  "scripts": {"start": "node server.js", "test": "node --test"},
+  "engines": {"node": ">=20"}
+}
