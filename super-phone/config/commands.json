@@ -1,0 +1,13 @@
+{
+  "commands": {
+    "health": {"agent":"commander","action":"route_command","risk":"L0"},
+    "check github": {"agent":"github","action":"inspect_repo","risk":"L0"},
+    "check failed workflows": {"agent":"github","action":"inspect_workflows","risk":"L0"},
+    "work mode": {"agent":"phone","action":"tasker_task","risk":"L1","args":{"task":"WORK_MODE"}},
+    "creator mode": {"agent":"phone","action":"tasker_task","risk":"L1","args":{"task":"CREATOR_MODE"}},
+    "check websites": {"agent":"website","action":"health_check","risk":"L1"},
+    "open github": {"agent":"phone","action":"open_url","risk":"L1","args":{"url":"https://github.com"}},
+    "send message": {"agent":"phone","action":"tasker_task","risk":"L2","args":{"task":"SEND_MESSAGE"}},
+    "create pull request": {"agent":"github","action":"create_pr","risk":"L2"}
+  }
+}
