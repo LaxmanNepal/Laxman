@@ -1,0 +1,8 @@
+{
+  "mode":"bounded",
+  "default":"manual",
+  "autonomous_max_risk":"L1",
+  "require_human_for":["L2","L3","financial_transfer","credential_change","destructive_git","publish","send_message"],
+  "limits":{"max_steps_per_run":10,"max_runtime_seconds":120,"max_retries":2},
+  "principles":["least_privilege","fail_closed","explicit_allowlist","audit_every_action","no_secret_exfiltration","no_self_modifying_security_policy"]
+}
